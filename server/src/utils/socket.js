@@ -1,4 +1,16 @@
-const socketConnectionHandler = (socket, io) => {
+const config = require('../config')
+
+const authHandler = (socket, next) => {
+  const token = socket.handshake.auth.token
+  console.log('socket authenticate token:', token)
+  if (token && token === config.socketToken) {
+    next()
+  } else {
+    next(new Error('socket authentication failed'))
+  }
+}
+
+const onConnectionHandler = (io, socket) => {
   // console.log(`socket handshake:`, socket.handshake)
   console.log(`socket: ${socket.id} has connected`)
 
@@ -12,4 +24,7 @@ const socketConnectionHandler = (socket, io) => {
   })
 }
 
-module.exports = socketConnectionHandler
+module.exports = {
+  authHandler,
+  onConnectionHandler,
+}

@@ -7,8 +7,7 @@ const { Server } = require('socket.io')
 const initRoutes = require('./routes')
 const errorHandler = require('./middlewares/error.middleware')
 const notFoundHandler = require('./middlewares/not-found.middleware')
-const { socketAuthHandler } = require('./middlewares/auth.middleware')
-const socketConnectionHandler = require('./utils/socket')
+const socketUtil = require('./utils/socket')
 
 const app = express()
 app.use(
@@ -38,9 +37,9 @@ const io = new Server(httpServer, {
   /* options */
 })
 
-io.use(socketAuthHandler)
+io.use(socketUtil.authHandler)
 
-io.on('connection', (socket) => socketConnectionHandler(socket, io))
+io.on('connection', (socket) => socketUtil.onConnectionHandler(io, socket))
 
 initRoutes(app, io)
 
