@@ -25,6 +25,10 @@ function Chat() {
 
     socket.on('message', handleMessageFromServer)
 
+    socket.on('web-update', (data) => {
+      console.log('socket:', socket.id, ', web-update:', data)
+    })
+
     return () => {
       socket.off('connect')
       socket.off('disconnect')
