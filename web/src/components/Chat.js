@@ -1,18 +1,17 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSocket } from '../context/socket'
 
-function Chat() {
+export default function Chat({
+  room,
+  username,
+  initialTotalUsers,
+  onExitChat,
+}) {
   const [messages, setMessages] = useState([])
   const [inputMessage, setInputMessage] = useState('')
+  const [totalUsers, setTotalUsers] = useState(initialTotalUsers)
+  const msgBoxRef = useRef()
   const socket = useSocket()
-
-  const handleMessageFromServer = useCallback((msg) => {
-    console.log('on message:', msg)
-    setMessages((prev) => {
-      return prev.concat(msg)
-    })
-    window.scrollTo(0, document.body.scrollHeight)
-  }, [])
 
   useEffect(() => {
     socket.on('connect', () => {
@@ -20,40 +19,92 @@ function Chat() {
     })
 
     socket.on('disconnect', (reason) => {
-      console.log('socket:', socket.id, 'disconnected reason:', reason)
+      console.log('socket disconnected reason:', reason)
     })
 
-    socket.on('message', handleMessageFromServer)
+    socket.on('message', (data) => {
+      console.log('message:', data)
 
-    socket.on('web-update', (data) => {
-      console.log('socket:', socket.id, ', web-update:', data)
+      if (room === data.room) {
+        setMessages((prev) => {
+          return prev.concat(`${data.username} : ${data.message}`)
+        })
+
+        msgBoxRef.current.scrollTop = msgBoxRef.current.scrollHeight
+      }
+    })
+
+    socket.on('room_message', (data) => {
+      console.log('room_message:', data)
+
+      if (room === data.room) {
+        setMessages((prev) => {
+          return prev.concat(data.message)
+        })
+
+        msgBoxRef.current.scrollTop = msgBoxRef.current.scrollHeight
+
+        setTotalUsers(data.totalUsers)
+      }
     })
 
     return () => {
-      socket.off('connect')
-      socket.off('disconnect')
+      socket.off('room_message')
       socket.off('message')
+      socket.off('disconnect')
+      socket.off('connect')
     }
-  }, [socket, handleMessageFromServer])
+  }, [])
 
-  const handleMessageEnter = (e) => {
+  useEffect(() => {
+    setTotalUsers(initialTotalUsers)
+  }, [initialTotalUsers])
+
+  const handleMessage = (e) => {
     e.preventDefault()
-    socket.emit('message', inputMessage)
+    socket.emit('message', {
+      room,
+      username,
+      message: inputMessage,
+    })
     setInputMessage('')
   }
 
+  const handleExit = (e) => {
+    e.preventDefault()
+    socket.emit('room_leave', { room, username })
+    onExitChat()
+  }
+
   return (
-    <div className="App">
+    <div>
+      <div style={{ marginTop: '10px' }}>
+        Room: {room}, Total users: {totalUsers}
+      </div>
+
+      <br />
+
       <ul
+        ref={msgBoxRef}
         style={{
           listStyleType: 'none',
+          width: '200px',
+          height: '100px',
+          margin: '0 auto',
+          padding: '5px',
+          overflowY: 'scroll',
+          border: 'solid 1px',
+          textAlign: 'left',
         }}
       >
         {messages.map((msg, index) => (
           <li key={`msg-${index}`}>{msg}</li>
         ))}
       </ul>
-      <form onSubmit={handleMessageEnter}>
+
+      <br />
+
+      <form onSubmit={handleMessage}>
         <input
           id="input"
           autoComplete="off"
@@ -62,10 +113,12 @@ function Chat() {
             setInputMessage(target.value)
           }}
         />
-        <button onClick={handleMessageEnter}>Send</button>
+        <button onClick={handleMessage}>Send</button>
       </form>
+
+      <br />
+
+      <button onClick={handleExit}>Exit</button>
     </div>
   )
 }
-
-export default Chat
