@@ -1,6 +1,6 @@
 import { useSocket } from '../context/socket'
 
-export default function Login({
+export default function ChatLogin({
   room,
   username,
   onInfoChange,
@@ -21,9 +21,9 @@ export default function Login({
   }
 
   return (
-    <div className="login_container">
+    <div className="login-container">
       <form onSubmit={handleSubmit}>
-        <div className="login_form">
+        <div className="login-form">
           <label htmlFor="room">Room: </label>
           <input
             id="room"

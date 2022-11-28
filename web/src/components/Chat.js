@@ -1,6 +1,25 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSocket } from '../context/socket'
 
+import VideoPlayer from './VideoPlayer'
+
+const videoJsOptions = {
+  autoplay: true,
+  controls: true,
+  responsive: true,
+  fluid: true,
+  sources: [
+    // {
+    //   src: '/movie.mp4',
+    //   type: 'video/mp4',
+    // },
+    {
+      src: 'https://d2zihajmogu5jn.cloudfront.net/bipbop-advanced/bipbop_16x9_variant.m3u8',
+      type: 'application/x-mpegurl',
+    },
+  ],
+}
+
 export default function Chat({
   room,
   username,
@@ -12,6 +31,7 @@ export default function Chat({
   const [totalUsers, setTotalUsers] = useState(initialTotalUsers)
   const msgBoxRef = useRef()
   const socket = useSocket()
+  const playerRef = useRef()
 
   useEffect(() => {
     socket.on('connect', () => {
@@ -54,6 +74,7 @@ export default function Chat({
       socket.off('disconnect')
       socket.off('connect')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -76,49 +97,56 @@ export default function Chat({
     onExitChat()
   }
 
+  const handlePlayerReady = (player) => {
+    playerRef.current = player
+
+    player.on('waiting', () => {
+      console.log('player is waiting')
+    })
+
+    player.on('dispose', () => {
+      console.log('player will dispose')
+    })
+  }
+
   return (
-    <div>
-      <div style={{ marginTop: '10px' }}>
-        Room: {room}, Total users: {totalUsers}
+    <div className="chat-container">
+      <div className="left">
+        <VideoPlayer options={videoJsOptions} onReady={handlePlayerReady} />
       </div>
 
-      <br />
+      <div className="right">
+        <div style={{ marginTop: '10px' }}>
+          Room: {room}, Total users: {totalUsers}
+        </div>
 
-      <ul
-        ref={msgBoxRef}
-        style={{
-          listStyleType: 'none',
-          width: '200px',
-          height: '100px',
-          margin: '0 auto',
-          padding: '5px',
-          overflowY: 'scroll',
-          border: 'solid 1px',
-          textAlign: 'left',
-        }}
-      >
-        {messages.map((msg, index) => (
-          <li key={`msg-${index}`}>{msg}</li>
-        ))}
-      </ul>
+        <br />
 
-      <br />
+        <ul ref={msgBoxRef} className="message-list">
+          {messages.map((msg, index) => (
+            <li key={`msg-${index}`}>{msg}</li>
+          ))}
+        </ul>
 
-      <form onSubmit={handleMessage}>
-        <input
-          id="input"
-          autoComplete="off"
-          value={inputMessage}
-          onChange={({ target }) => {
-            setInputMessage(target.value)
-          }}
-        />
-        <button onClick={handleMessage}>Send</button>
-      </form>
+        <br />
 
-      <br />
+        <form onSubmit={handleMessage}>
+          <span>{username} : </span>
+          <input
+            id="input"
+            autoComplete="off"
+            value={inputMessage}
+            onChange={({ target }) => {
+              setInputMessage(target.value)
+            }}
+          />
+          <button onClick={handleMessage}>Send</button>
+        </form>
 
-      <button onClick={handleExit}>Exit</button>
+        <br />
+
+        <button onClick={handleExit}>Exit</button>
+      </div>
     </div>
   )
 }
