@@ -1,4 +1,4 @@
-import { useSocket } from '../context/socket'
+import { useSocket } from '../../context/socket'
 
 export default function ChatLogin({
   room,

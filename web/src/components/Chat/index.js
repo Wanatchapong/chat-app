@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { useSocket } from '../context/socket'
+import { useSocket } from '../../context/socket'
 
-import VideoPlayer from './VideoPlayer'
+import VideoPlayer from '../VideoPlayer'
 
 const videoJsOptions = {
   autoplay: true,

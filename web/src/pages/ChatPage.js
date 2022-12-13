@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { SocketProvider } from '../context/socket'
 import Chat from '../components/Chat'
-import ChatLogin from '../components/ChatLogin'
+import ChatLogin from '../components/Chat/Login'
 
 export default function ChatPage() {
   const [joined, setJoined] = useState(false)
