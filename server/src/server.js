@@ -7,17 +7,12 @@ const { Server } = require('socket.io')
 const initRoutes = require('./routes')
 const errorHandler = require('./middlewares/error.middleware')
 const notFoundHandler = require('./middlewares/not-found.middleware')
-const socketUtil = require('./utils/socket')
+const redisClient = require('./utils/redis')
+const defaultHandler = require('./socket/default.handler')
+const chatHandler = require('./socket/chat.handler')
 
 const app = express()
-app.use(
-  cors({
-    origin: '*',
-    methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
-    preflightContinue: true,
-    optionsSuccessStatus: 200,
-  }),
-)
+app.use(cors())
 app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
@@ -34,12 +29,24 @@ app.use(
 
 const httpServer = createServer(app)
 const io = new Server(httpServer, {
-  /* options */
+  cors: {
+    origin: '*',
+    methods: ['GET', 'PUT', 'POST', 'DELETE'],
+  },
 })
 
-io.use(socketUtil.authHandler)
+// Default namespace
+io.use(defaultHandler.useAuth)
+io.on('connection', (socket) => defaultHandler.handleConnection(io, socket))
 
-io.on('connection', (socket) => socketUtil.onConnectionHandler(io, socket))
+// Chat namespace
+const chatIo = io.of('/chat')
+chatIo.use(chatHandler.useAuth)
+chatIo.on('connection', (socket) =>
+  chatHandler.handleConnection(socket, chatIo),
+)
+
+redisClient.connect()
 
 initRoutes(app, io)
 
